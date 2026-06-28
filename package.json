@@ -1,0 +1,17 @@
+{
+  "name": "tmap-course-polylines",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "T-MAP 보행자 경로안내 API로 러닝 코스 폴리라인 JSON을 생성하는 빌드타임 스크립트",
+  "scripts": {
+    "build:courses": "tsx scripts/build-course-polylines.ts",
+    "viewer": "node scripts/serve-viewer.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

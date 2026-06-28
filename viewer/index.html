@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>코스 폴리라인 뷰어 (카카오맵)</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; font-family: -apple-system, system-ui, sans-serif; }
+      #map { width: 100%; height: 100%; }
+      #panel {
+        position: absolute; top: 12px; left: 12px; z-index: 10;
+        background: rgba(255, 255, 255, 0.96); border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18); padding: 12px 14px;
+        min-width: 260px; max-width: 320px;
+      }
+      #panel h1 { font-size: 14px; margin: 0 0 8px; }
+      #course { width: 100%; padding: 6px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; }
+      #info { margin-top: 8px; font-size: 13px; color: #333; line-height: 1.5; }
+      #info b { color: #ff3b30; }
+      #legend { margin-top: 8px; font-size: 12px; color: #666; }
+      .err { color: #c00; font-size: 13px; }
+      #waypoints { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: #444; }
+      #waypoints li { margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div id="panel">
+      <h1>코스 폴리라인 뷰어</h1>
+      <select id="course"></select>
+      <div id="info"></div>
+      <ol id="waypoints"></ol>
+      <div id="legend">🔴 폴리라인 · 📍 경유지 앵커</div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      let KEY = params.get('appkey') || localStorage.getItem('kakao_js_key');
+
+      // 키 해석 순서: ?appkey= → localStorage → /api/kakao-key(Vercel 환경변수) → prompt(로컬)
+      async function resolveKey() {
+        if (KEY) return KEY.trim();
+        try {
+          const r = await fetch('/api/kakao-key');
+          if (r.ok) {
+            const { key } = await r.json();
+            if (key) return key.trim();
+          }
+        } catch {}
+        const entered = prompt('카카오 JavaScript 앱키를 입력하세요 (Kakao Developers → 앱 → 앱키 → JavaScript 키)');
+        if (entered) localStorage.setItem('kakao_js_key', entered.trim());
+        return entered ? entered.trim() : '';
+      }
+
+      const $info = document.getElementById('info');
+      const $wp = document.getElementById('waypoints');
+
+      function fail(msg) {
+        $info.innerHTML = '<span class="err">' + msg + '</span>';
+      }
+
+      function loadSdk(key) {
+        return new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + encodeURIComponent(key) + '&autoload=false';
+          s.onload = () => kakao.maps.load(res);
+          s.onerror = () => rej(new Error('SDK 로드 실패 — 앱키/도메인 등록 확인'));
+          document.head.appendChild(s);
+        });
+      }
+
+      async function main() {
+        KEY = await resolveKey();
+        if (!KEY) { fail('카카오 JS 앱키가 필요합니다. 새로고침 후 입력하거나 ?appkey=... 로 접속하세요.'); return; }
+        try {
+          await loadSdk(KEY);
+        } catch (e) {
+          fail(e.message + ' — Kakao Developers에서 Web 플랫폼에 http://localhost:5173 등록 필요.');
+          return;
+        }
+
+        let courses;
+        try {
+          courses = await (await fetch('/data/courses.json')).json();
+        } catch {
+          fail('/data/courses.json 을 못 읽었습니다. npm run build:courses 먼저 실행하세요.');
+          return;
+        }
+        if (!courses.length) { fail('courses.json 이 비어있음 — 좌표를 채우고 build:courses 재실행.'); return; }
+
+        const map = new kakao.maps.Map(document.getElementById('map'), {
+          center: new kakao.maps.LatLng(35.96, 126.71),
+          level: 5,
+        });
+
+        const sel = document.getElementById('course');
+        courses.forEach((c, i) => {
+          const o = document.createElement('option');
+          o.value = i;
+          o.textContent = c.name + ' (' + (c.totalMeters / 1000).toFixed(2) + 'km)';
+          sel.appendChild(o);
+        });
+
+        let overlays = [];
+        const clear = () => { overlays.forEach((o) => o.setMap(null)); overlays = []; };
+
+        function draw(c) {
+          clear();
+          const path = c.polyline.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+          const line = new kakao.maps.Polyline({
+            path, strokeWeight: 5, strokeColor: '#ff3b30', strokeOpacity: 0.9, strokeStyle: 'solid',
+          });
+          line.setMap(map);
+          overlays.push(line);
+
+          $wp.innerHTML = '';
+          c.waypointAnchors.forEach((a, idx) => {
+            const pt = c.polyline[a.polylineIndex];
+            const pos = new kakao.maps.LatLng(pt.lat, pt.lng);
+            const marker = new kakao.maps.Marker({ position: pos, map });
+            overlays.push(marker);
+            const label = new kakao.maps.CustomOverlay({
+              position: pos, yAnchor: 2.2,
+              content: '<div style="background:#222;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;white-space:nowrap">' + (idx + 1) + '. ' + a.name + '</div>',
+            });
+            label.setMap(map);
+            overlays.push(label);
+            const km = (c.cumulativeMeters[a.polylineIndex] / 1000).toFixed(2);
+            const li = document.createElement('li');
+            li.textContent = a.name + ' — ' + km + 'km (idx ' + a.polylineIndex + ')';
+            $wp.appendChild(li);
+          });
+
+          const b = new kakao.maps.LatLngBounds();
+          path.forEach((ll) => b.extend(ll));
+          map.setBounds(b);
+
+          const cat = c.measuredCategory || c.category;
+          const mismatch = c.declaredCategory && cat !== c.declaredCategory
+            ? ' ⚠ 선언:' + c.declaredCategory : '';
+          $info.innerHTML = '점 <b>' + c.polyline.length + '</b> · <b>' +
+            (c.totalMeters / 1000).toFixed(2) + 'km</b> · ' + cat + mismatch;
+        }
+
+        sel.onchange = () => draw(courses[+sel.value]);
+        draw(courses[0]);
+      }
+
+      main();
+    </script>
+  </body>
+</html>
