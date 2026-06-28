@@ -3,6 +3,7 @@
     "id": "gunsan-modern-history-run",
     "name": "근대 역사 박물관 런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "중거리",
     "measuredCategory": "중거리",
     "polyline": [
@@ -2000,6 +2001,7 @@
     "id": "gunsan-saemangeum-run",
     "name": "새만금 방파제 런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "장거리",
     "measuredCategory": "장거리",
     "polyline": [
@@ -5322,6 +5324,7 @@
     "id": "gunsan-jjamppong-run",
     "name": "짬뽕런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "단거리",
     "polyline": [
@@ -6265,6 +6268,7 @@
     "id": "gunsan-seonyudo-beach-run",
     "name": "선유도 해변 런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "단거리",
     "polyline": [
@@ -7404,6 +7408,7 @@
     "id": "gunsan-wetland-eco-run",
     "name": "습지 생태 공원 런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "중거리",
     "measuredCategory": "중거리",
     "polyline": [
@@ -9036,6 +9041,7 @@
     "id": "gunsan-cypress-forest-run",
     "name": "편백나무 숲 런",
     "region": "군산",
+    "searchOption": 0,
     "declaredCategory": "중거리",
     "measuredCategory": "중거리",
     "polyline": [
@@ -10678,6 +10684,7 @@
     "id": "jeonju-hanok-village-run",
     "name": "한옥마을 둘레길 코스",
     "region": "전주",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "단거리",
     "polyline": [
@@ -11267,6 +11274,7 @@
     "id": "jeonju-ajung-lake-run",
     "name": "아중호수 둘레길 코스",
     "region": "전주",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "중거리",
     "polyline": [
@@ -12670,6 +12678,7 @@
     "id": "jeonju-zoo-run",
     "name": "전주동물원 코스",
     "region": "전주",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "단거리",
     "polyline": [
@@ -13718,6 +13727,7 @@
     "id": "jeonju-catholic-shrine-run",
     "name": "천주교 성지 코스",
     "region": "전주",
+    "searchOption": 0,
     "declaredCategory": "단거리",
     "measuredCategory": "단거리",
     "polyline": [

@@ -2,6 +2,9 @@ export type DistanceCategory = '단거리' | '중거리' | '장거리';
 
 export type Region = '군산' | '전주';
 
+/** T-MAP 보행자 도보 검색 옵션: 0 추천 · 4 대로우선 · 10 최단 · 30 계단제외 */
+export type SearchOption = 0 | 4 | 10 | 30;
+
 export interface CoursePoint {
   name: string;
   lat: number | null;
@@ -14,6 +17,7 @@ export interface CourseInput {
   region: Region;
   declaredCategory: DistanceCategory;
   declaredKm: number;
+  searchOption?: SearchOption;
   points: CoursePoint[];
   verifyNote?: string;
 }

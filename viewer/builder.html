@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>경로 그려보기 (T-MAP 보행자)</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; font-family: -apple-system, system-ui, sans-serif; }
+      #map { width: 100%; height: 100%; }
+      #panel {
+        position: absolute; top: 12px; left: 12px; z-index: 10;
+        background: rgba(255, 255, 255, 0.97); border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18); padding: 12px 14px;
+        width: 320px; max-height: calc(100% - 24px); overflow-y: auto;
+      }
+      #panel h1 { font-size: 14px; margin: 0 0 4px; }
+      .hint { font-size: 12px; color: #666; line-height: 1.5; margin-bottom: 8px; }
+      .row { display: flex; gap: 6px; margin: 6px 0; }
+      .row > * { flex: 1; }
+      input, select, button { padding: 7px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+      input { cursor: text; }
+      button.primary { background: #ff3b30; color: #fff; border-color: #ff3b30; font-weight: 600; }
+      button.compare { background: #111; color: #fff; border-color: #111; }
+      #result { font-size: 13px; margin: 8px 0; min-height: 18px; }
+      #result b { color: #ff3b30; }
+      #legend { font-size: 12px; line-height: 1.7; margin: 6px 0; }
+      #legend .sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+      textarea { width: 100%; height: 132px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; border-radius: 6px; border: 1px solid #ccc; padding: 6px; resize: vertical; }
+      .pin { background: #222; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+      .err { color: #c00; }
+      a.back { font-size: 12px; color: #007aff; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div id="panel">
+      <h1>경로 그려보기</h1>
+      <div class="hint">지도를 클릭해 점을 추가하세요. 점의 개수는 출발지와 도착지를 포함해서 7개 이하가 되는 것을 권장합니다.</div>
+
+      <div class="row">
+        <input id="cname" placeholder="코스 이름" />
+        <select id="cregion">
+          <option value="군산">군산</option>
+          <option value="전주">전주</option>
+          <option value="남원">남원</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="row">
+        <select id="opt">
+          <option value="0">0 · 추천</option>
+          <option value="4">4 · 대로우선</option>
+          <option value="10">10 · 최단</option>
+          <option value="30">30 · 계단제외</option>
+        </select>
+        <button class="primary" id="draw">경로 그리기</button>
+      </div>
+      <div class="row">
+        <button class="compare" id="compare">옵션 4개 비교</button>
+        <button id="undo">되돌리기</button>
+        <button id="clear">초기화</button>
+      </div>
+
+      <div id="result">점을 2개 이상 찍어서 경로 그리기</div>
+      <div id="legend"></div>
+
+      <div class="hint" style="margin:8px 0 2px">경로가 완성되면 하단의 <b>복사하기</b>를 누르고,<br>디스코드 💻-dev-file 채널에 전달해 주세요.</div>
+      <div id="legend"></div>
+
+      <textarea id="out" readonly></textarea>
+      <div class="row">
+        <button id="copy">복사</button>
+        <a class="back" href="/viewer/" style="flex:0 0 auto; align-self:center; padding:0 6px">← 뷰어로</a>
+      </div>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const COLORS = { 0: '#ff3b30', 4: '#007aff', 10: '#34c759', 30: '#ff9500' };
+      const OPT_NAME = { 0: '추천', 4: '대로우선', 10: '최단', 30: '계단제외' };
+
+      let KEY = new URLSearchParams(location.search).get('appkey') || localStorage.getItem('kakao_js_key');
+      async function resolveKey() {
+        if (KEY) return KEY.trim();
+        try {
+          const r = await fetch('/api/kakao-key');
+          if (r.ok) { const { key } = await r.json(); if (key) return key.trim(); }
+        } catch {}
+        const e = prompt('카카오 JavaScript 앱키');
+        if (e) localStorage.setItem('kakao_js_key', e.trim());
+        return e ? e.trim() : '';
+      }
+      function loadSdk(key) {
+        return new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + encodeURIComponent(key) + '&autoload=false';
+          s.onload = () => kakao.maps.load(res);
+          s.onerror = () => rej(new Error('SDK 로드 실패'));
+          document.head.appendChild(s);
+        });
+      }
+
+      function classify(m) {
+        const km = Math.round(m / 1000);
+        return km < 7 ? '단거리' : km < 20 ? '중거리' : '장거리';
+      }
+      const round6 = (n) => Math.round(n * 1e6) / 1e6;
+      const ptName = (i, n) => (i === 0 ? '출발' : i === n - 1 && n > 1 ? '도착' : '경유' + i);
+      const slug = (s) => s.trim().toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-+|-+$/g, '');
+
+      async function main() {
+        KEY = await resolveKey();
+        if (!KEY) { $('result').innerHTML = '<span class="err">카카오 키 필요</span>'; return; }
+        await loadSdk(KEY);
+
+        const map = new kakao.maps.Map($('map'), { center: new kakao.maps.LatLng(35.82, 127.15), level: 5 });
+
+        const points = [];
+        let pointOverlays = [];
+        let routeOverlays = [];
+        let lastResult = null; // 마지막 단일 "경로 그리기" 결과 { opt, totalMeters }
+
+        function clearRoutes() {
+          routeOverlays.forEach((o) => o.setMap(null));
+          routeOverlays = [];
+          $('legend').innerHTML = '';
+        }
+        function renderPoints() {
+          pointOverlays.forEach((o) => o.setMap(null));
+          pointOverlays = [];
+          points.forEach((pt, i) => {
+            const pos = new kakao.maps.LatLng(pt.lat, pt.lng);
+            const m = new kakao.maps.Marker({ position: pos, map });
+            const lab = new kakao.maps.CustomOverlay({ position: pos, yAnchor: 2.2, content: '<div class="pin">' + ptName(i, points.length) + '</div>' });
+            lab.setMap(map);
+            pointOverlays.push(m, lab);
+          });
+          updateOut();
+        }
+        function updateOut() {
+          if (points.length < 2) { $('out').value = ''; return; }
+          const name = $('cname').value.trim();
+          const region = $('cregion').value;
+          const opt = Number($('opt').value);
+          const id = (region === '군산' ? 'gunsan' : 'jeonju') + '-' + (slug(name) || 'course');
+          const drawn = lastResult && lastResult.opt === opt;
+          const cat = drawn ? classify(lastResult.totalMeters) : '단거리';
+          const kmLine = drawn
+            ? (lastResult.totalMeters / 1000).toFixed(1)
+            : '0 /* 경로 그리기 후 자동 */';
+          const ptLines = points
+            .map((p, i) => "      { name: '" + ptName(i, points.length) + "', lat: " + round6(p.lat) + ', lng: ' + round6(p.lng) + ' },')
+            .join('\n');
+          $('out').value =
+            '  {\n' +
+            "    id: '" + id + "',\n" +
+            "    name: '" + (name || '코스 이름') + "',\n" +
+            "    region: '" + region + "',\n" +
+            "    declaredCategory: '" + cat + "'," + (drawn ? '' : ' // 경로 그리기 후 확정') + '\n' +
+            '    declaredKm: ' + kmLine + ',\n' +
+            '    searchOption: ' + opt + ',\n' +
+            '    points: [\n' + ptLines + '\n    ],\n' +
+            '  },';
+        }
+
+        kakao.maps.event.addListener(map, 'click', (e) => {
+          const ll = e.latLng;
+          points.push({ lat: ll.getLat(), lng: ll.getLng() });
+          lastResult = null;
+          clearRoutes();
+          renderPoints();
+          $('result').textContent = points.length + '개 점. “경로 그리기” 누르세요.';
+        });
+
+        async function callRoute(opt) {
+          const named = points.map((p, i) => ({ ...p, name: ptName(i, points.length) }));
+          const r = await fetch('/api/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ points: named, searchOption: opt }),
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+          return data;
+        }
+        function drawLine(poly, color, weight) {
+          const path = poly.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+          const line = new kakao.maps.Polyline({ path, strokeWeight: weight, strokeColor: color, strokeOpacity: 0.9 });
+          line.setMap(map);
+          routeOverlays.push(line);
+          return path;
+        }
+
+        $('draw').onclick = async () => {
+          if (points.length < 2) { $('result').innerHTML = '<span class="err">점 2개 이상 필요</span>'; return; }
+          const opt = Number($('opt').value);
+          $('result').textContent = '계산 중…';
+          try {
+            clearRoutes();
+            const { polyline, totalMeters } = await callRoute(opt);
+            const path = drawLine(polyline, COLORS[opt], 5);
+            const b = new kakao.maps.LatLngBounds(); path.forEach((ll) => b.extend(ll)); map.setBounds(b);
+            lastResult = { opt, totalMeters };
+            updateOut();
+            $('result').innerHTML = 'searchOption ' + opt + '(' + OPT_NAME[opt] + ') · 점 <b>' + polyline.length + '</b> · <b>' + (totalMeters / 1000).toFixed(2) + 'km</b> · ' + classify(totalMeters);
+          } catch (e) {
+            $('result').innerHTML = '<span class="err">' + e.message + '</span>';
+          }
+        };
+
+        $('compare').onclick = async () => {
+          if (points.length < 2) { $('result').innerHTML = '<span class="err">점 2개 이상 필요</span>'; return; }
+          $('result').textContent = '4개 옵션 계산 중…';
+          clearRoutes();
+          const opts = [0, 4, 10, 30];
+          const b = new kakao.maps.LatLngBounds();
+          let legend = '';
+          for (const opt of opts) {
+            try {
+              const { polyline, totalMeters } = await callRoute(opt);
+              const path = drawLine(polyline, COLORS[opt], 4);
+              path.forEach((ll) => b.extend(ll));
+              legend += '<div><span class="sw" style="background:' + COLORS[opt] + '"></span>' + opt + ' ' + OPT_NAME[opt] + ' — <b>' + (totalMeters / 1000).toFixed(2) + 'km</b></div>';
+            } catch (e) {
+              legend += '<div class="err">' + opt + ' 실패: ' + e.message + '</div>';
+            }
+          }
+          map.setBounds(b);
+          $('legend').innerHTML = legend;
+          $('result').textContent = '4개 옵션 비교 결과 ↓';
+        };
+
+        $('undo').onclick = () => { points.pop(); lastResult = null; clearRoutes(); renderPoints(); $('result').textContent = points.length + '개 점.'; };
+        $('clear').onclick = () => { points.length = 0; lastResult = null; clearRoutes(); renderPoints(); $('result').textContent = '초기화됨. 지도를 클릭하세요.'; };
+        $('cname').oninput = updateOut;
+        $('cregion').onchange = updateOut;
+        $('opt').onchange = () => { lastResult = null; updateOut(); };
+        $('copy').onclick = async () => {
+          if (!$('out').value) return;
+          try { await navigator.clipboard.writeText($('out').value); $('copy').textContent = '복사됨!'; setTimeout(() => ($('copy').textContent = '복사'), 1200); }
+          catch { $('out').select(); document.execCommand('copy'); }
+        };
+      }
+
+      main();
+    </script>
+  </body>
+</html>

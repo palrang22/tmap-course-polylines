@@ -26,6 +26,7 @@ import {
   type CourseInput,
   type DistanceCategory,
   type Region,
+  type SearchOption,
 } from './courses.input.ts';
 
 // ── 설정 ────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ interface CourseOutput {
   id: string;
   name: string;
   region: Region;
+  searchOption: SearchOption; // 이 경로를 뽑은 도보 옵션 (생략 시 0=추천)
   declaredCategory: DistanceCategory;
   measuredCategory: DistanceCategory; // 실측 재분류 결과
   polyline: Coord[]; // 순서 보존, 구간 경계 중복점 제거
@@ -130,7 +132,10 @@ function windowize(points: ResolvedPoint[]): ResolvedPoint[][] {
 }
 
 /** 한 윈도(출발 + 경유 ≤5 + 도착)를 라우팅해 폴리라인 좌표를 받는다. */
-async function routeSegment(win: ResolvedPoint[]): Promise<Coord[]> {
+async function routeSegment(
+  win: ResolvedPoint[],
+  searchOption?: SearchOption,
+): Promise<Coord[]> {
   const start = win[0];
   const end = win[win.length - 1];
   const passes = win.slice(1, -1);
@@ -146,6 +151,9 @@ async function routeSegment(win: ResolvedPoint[]): Promise<Coord[]> {
     resCoordType: 'WGS84GEO', // 받는 좌표도 위경도 (EPSG3857 변환 불필요)
     sort: 'index', // 구간 순서 보장
   };
+  if (searchOption !== undefined) {
+    body.searchOption = String(searchOption); // 0 추천 · 4 대로우선 · 10 최단 · 30 계단제외
+  }
   if (passes.length) {
     // passList 형식: "경도,위도_경도,위도"
     body.passList = passes.map((p) => `${p.lng},${p.lat}`).join('_');
@@ -214,7 +222,7 @@ async function buildCourse(
 
   const parts: Coord[][] = [];
   for (let i = 0; i < windows.length; i++) {
-    parts.push(await routeSegment(windows[i]));
+    parts.push(await routeSegment(windows[i], course.searchOption));
     if (i < windows.length - 1) await sleep(REQUEST_DELAY_MS);
   }
 
@@ -248,6 +256,7 @@ async function buildCourse(
     id: course.id,
     name: course.name,
     region: course.region,
+    searchOption: course.searchOption ?? 0,
     declaredCategory: course.declaredCategory,
     measuredCategory,
     polyline,

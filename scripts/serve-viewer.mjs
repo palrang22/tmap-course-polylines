@@ -10,6 +10,16 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, dirname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildPolyline } from '../lib/route-core.mjs';
+
+function readRaw(req) {
+  return new Promise((res, rej) => {
+    let d = '';
+    req.on('data', (c) => (d += c));
+    req.on('end', () => res(d));
+    req.on('error', rej);
+  });
+}
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT) || 5173;
@@ -30,6 +40,20 @@ createServer(async (req, res) => {
     if (p === '/api/kakao-key') {
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
       res.end(JSON.stringify({ key: process.env.KAKAO_JS_KEY || '' }));
+      return;
+    }
+
+    // 배포본의 api/route.js 를 로컬에서 흉내낸다.
+    if (p === '/api/route' && req.method === 'POST') {
+      try {
+        const { points, searchOption } = JSON.parse((await readRaw(req)) || '{}');
+        const result = await buildPolyline({ points, searchOption, appKey: process.env.TMAP_APP_KEY });
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result));
+      } catch (e) {
+        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: String(e?.message || e) }));
+      }
       return;
     }
 
