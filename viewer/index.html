@@ -15,7 +15,8 @@
         min-width: 260px; max-width: 320px;
       }
       #panel h1 { font-size: 14px; margin: 0 0 8px; }
-      #course { width: 100%; padding: 6px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; }
+      #region, #course { width: 100%; padding: 6px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; }
+      #region { margin-bottom: 6px; font-weight: 600; }
       #info { margin-top: 8px; font-size: 13px; color: #333; line-height: 1.5; }
       #info b { color: #ff3b30; }
       #legend { margin-top: 8px; font-size: 12px; color: #666; }
@@ -27,6 +28,7 @@
   <body>
     <div id="panel">
       <h1>코스 폴리라인 뷰어</h1>
+      <select id="region"></select>
       <select id="course"></select>
       <div id="info"></div>
       <ol id="waypoints"></ol>
@@ -94,14 +96,6 @@
           level: 5,
         });
 
-        const sel = document.getElementById('course');
-        courses.forEach((c, i) => {
-          const o = document.createElement('option');
-          o.value = i;
-          o.textContent = c.name + ' (' + (c.totalMeters / 1000).toFixed(2) + 'km)';
-          sel.appendChild(o);
-        });
-
         let overlays = [];
         const clear = () => { overlays.forEach((o) => o.setMap(null)); overlays = []; };
 
@@ -143,8 +137,53 @@
             (c.totalMeters / 1000).toFixed(2) + 'km</b> · ' + cat + mismatch;
         }
 
-        sel.onchange = () => draw(courses[+sel.value]);
-        draw(courses[0]);
+        // ── 지역(군산/전주) → 코스 필터 ──────────────────────────────
+        const REGION_ORDER = ['군산', '전주'];
+        const extra = [...new Set(courses.map((c) => c.region))].filter((r) => !REGION_ORDER.includes(r));
+        const regions = [...REGION_ORDER, ...extra];
+
+        const regionSel = document.getElementById('region');
+        regions.forEach((r) => {
+          const count = courses.filter((c) => c.region === r).length;
+          const o = document.createElement('option');
+          o.value = r;
+          o.textContent = r + ' (' + count + ')';
+          regionSel.appendChild(o);
+        });
+
+        const courseSel = document.getElementById('course');
+
+        function drawById(id) {
+          const c = courses.find((x) => x.id === id);
+          if (c) draw(c);
+        }
+
+        function populateCourses(region) {
+          courseSel.innerHTML = '';
+          const list = courses.filter((c) => c.region === region);
+          if (!list.length) {
+            clear();
+            $wp.innerHTML = '';
+            courseSel.innerHTML = '<option>— 코스 준비 중 —</option>';
+            $info.innerHTML = '<span class="err">' + region + ' 코스는 아직 준비중입니다.';
+            return;
+          }
+          list.forEach((c) => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name + ' (' + (c.totalMeters / 1000).toFixed(2) + 'km)';
+            courseSel.appendChild(o);
+          });
+          drawById(courseSel.value);
+        }
+
+        courseSel.onchange = () => drawById(courseSel.value);
+        regionSel.onchange = () => populateCourses(regionSel.value);
+
+        // 초기: 코스가 있는 첫 지역을 선택
+        const firstWithCourses = regions.find((r) => courses.some((c) => c.region === r)) || regions[0];
+        regionSel.value = firstWithCourses;
+        populateCourses(firstWithCourses);
       }
 
       main();

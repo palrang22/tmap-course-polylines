@@ -1,34 +1,20 @@
-/**
- * 코스 정의 (입력)
- * ------------------------------------------------------------------
- * PM이 스크린샷으로 준 코스를 좌표로 옮긴 곳.
- * 각 point 의 lat/lng 는 지도(가능하면 카카오 공유 링크)에서 직접 찍어 채운다.
- * lat/lng 가 null 이면 빌드 스크립트가 해당 코스를 건너뛰고 경고를 출력한다.
- *
- * points 순서 = 라우팅 순서 (출발 → 경유… → 도착).
- *   - 첫 원소 = 출발지, 마지막 원소 = 도착지, 중간 = 경유지(passList).
- *   - 경유지가 5개를 넘으면 빌드 스크립트가 자동으로 구간 분할 호출 후 이어붙인다.
- */
-
 export type DistanceCategory = '단거리' | '중거리' | '장거리';
+
+export type Region = '군산' | '전주';
 
 export interface CoursePoint {
   name: string;
-  /** 위도 (WGS84). TODO: 지도에서 추출해 채울 것 */
   lat: number | null;
-  /** 경도 (WGS84). TODO: 지도에서 추출해 채울 것 */
   lng: number | null;
 }
 
 export interface CourseInput {
   id: string;
   name: string;
-  /** PM이 명시한 범주 — API 실측으로 재분류해 불일치 시 경고 */
+  region: Region;
   declaredCategory: DistanceCategory;
-  /** PM이 명시한 "약 Nkm" 추정치 (참고/로그용) */
   declaredKm: number;
   points: CoursePoint[];
-  /** 결과를 별도 검증해야 하는 코스에 사유를 남긴다 */
   verifyNote?: string;
 }
 
@@ -37,6 +23,7 @@ export const courses: CourseInput[] = [
     {
     id: 'gunsan-modern-history-run',
     name: '근대 역사 박물관 런',
+    region: '군산',
     declaredCategory: '중거리',
     declaredKm: 10,
     points: [
@@ -52,6 +39,7 @@ export const courses: CourseInput[] = [
   {
     id: 'gunsan-saemangeum-run',
     name: '새만금 방파제 런',
+    region: '군산',
     declaredCategory: '장거리',
     declaredKm: 24,
     points: [
@@ -62,6 +50,7 @@ export const courses: CourseInput[] = [
   {
     id: 'gunsan-jjamppong-run',
     name: '짬뽕런',
+    region: '군산',
     declaredCategory: '단거리',
     declaredKm: 6,
     points: [
@@ -76,6 +65,7 @@ export const courses: CourseInput[] = [
   {
     id: 'gunsan-seonyudo-beach-run',
     name: '선유도 해변 런',
+    region: '군산',
     declaredCategory: '단거리',
     declaredKm: 5,
     points: [
@@ -89,6 +79,7 @@ export const courses: CourseInput[] = [
   {
     id: 'gunsan-wetland-eco-run',
     name: '습지 생태 공원 런',
+    region: '군산',
     declaredCategory: '중거리',
     declaredKm: 7,
     points: [
@@ -99,6 +90,7 @@ export const courses: CourseInput[] = [
   {
     id: 'gunsan-cypress-forest-run',
     name: '편백나무 숲 런',
+    region: '군산',
     declaredCategory: '중거리',
     declaredKm: 8,
     points: [
@@ -107,5 +99,59 @@ export const courses: CourseInput[] = [
     ],
   },
   // ── 전주 ──────────────────────────────────────────────────────────
-  // : 전주 코스는 PM 미제공. 정의되면 위와 동일 패턴으로 추가.
+  {
+    id: 'jeonju-hanok-village-run',
+    name: '한옥마을 둘레길 코스',
+    region: '전주',
+    declaredCategory: '단거리',
+    declaredKm: 3.2,
+    points: [
+      { name: '전주경기전 정문', lat: 35.8141, lng: 127.1501 }, 
+      { name: '한벽당', lat: 35.8119, lng: 127.1609 }, 
+      { name: '경유지(청연루 입구)', lat: 35.8102, lng: 127.1532 },
+      { name: '경유지(청연루 출구)', lat: 35.8118, lng: 127.1531 },
+      { name: '전동성당', lat: 35.8133, lng: 127.1489 }, 
+    ],
+  },
+  {
+    id: 'jeonju-ajung-lake-run',
+    name: '아중호수 둘레길 코스',
+    region: '전주',
+    declaredCategory: '단거리',
+    declaredKm: 5.8,
+    points: [
+      { name: '전주경기전 정문', lat: 35.8141, lng: 127.1501 },
+      { name: '경유지1', lat: 35.8259, lng: 127.1753 },
+      { name: '경유지2', lat: 35.8210, lng: 127.1757 },
+      { name: '경유지3', lat: 35.8178, lng: 127.1796 },
+      { name: '경유지4', lat: 35.8209, lng: 127.1804 },
+      { name: '도착지', lat: 35.8262, lng: 127.1769 },
+    ],
+  },
+  {
+    id: 'jeonju-zoo-run',
+    name: '전주동물원 코스',
+    region: '전주',
+    declaredCategory: '단거리',
+    declaredKm: 3.8,
+    points: [
+      { name: '덕진공원 3층 석탑', lat: 35.8475, lng: 127.1214 },
+      { name: '경유지1', lat: 35.8498, lng: 127.1211 },
+      { name: '경유지2', lat: 35.8497, lng: 127.1242 },
+      { name: '경유지3', lat: 35.8478, lng: 127.1226 },
+      { name: '경유지4', lat: 35.8490, lng: 127.1254 },
+      { name: '전주동물원', lat: 35.8576, lng: 127.1428 }, 
+    ],
+  },
+  {
+    id: 'jeonju-catholic-shrine-run',
+    name: '천주교 성지 코스',
+    region: '전주',
+    declaredCategory: '단거리',
+    declaredKm: 6.2,
+    points: [
+      { name: '전주 고속버스 터미널', lat: 35.8352, lng: 127.1289 },
+      { name: '치명자산성지 평화의전당', lat: 35.8032, lng: 127.1677 }, 
+    ],
+  },
 ];

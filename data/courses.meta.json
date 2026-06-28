@@ -2,6 +2,7 @@
   {
     "id": "gunsan-modern-history-run",
     "name": "근대 역사 박물관 런",
+    "region": "군산",
     "category": "중거리",
     "totalMeters": 10604,
     "placeNames": [
@@ -18,6 +19,7 @@
   {
     "id": "gunsan-saemangeum-run",
     "name": "새만금 방파제 런",
+    "region": "군산",
     "category": "장거리",
     "totalMeters": 24157,
     "placeNames": [
@@ -29,6 +31,7 @@
   {
     "id": "gunsan-jjamppong-run",
     "name": "짬뽕런",
+    "region": "군산",
     "category": "단거리",
     "totalMeters": 5894,
     "placeNames": [
@@ -44,6 +47,7 @@
   {
     "id": "gunsan-seonyudo-beach-run",
     "name": "선유도 해변 런",
+    "region": "군산",
     "category": "단거리",
     "totalMeters": 5181,
     "placeNames": [
@@ -58,6 +62,7 @@
   {
     "id": "gunsan-wetland-eco-run",
     "name": "습지 생태 공원 런",
+    "region": "군산",
     "category": "중거리",
     "totalMeters": 7363,
     "placeNames": [
@@ -69,11 +74,71 @@
   {
     "id": "gunsan-cypress-forest-run",
     "name": "편백나무 숲 런",
+    "region": "군산",
     "category": "중거리",
     "totalMeters": 8488,
     "placeNames": [
       "군산시청",
       "편백치유의 숲"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "jeonju-hanok-village-run",
+    "name": "한옥마을 둘레길 코스",
+    "region": "전주",
+    "category": "단거리",
+    "totalMeters": 2799,
+    "placeNames": [
+      "전주경기전 정문",
+      "한벽당",
+      "경유지(청연루 입구)",
+      "경유지(청연루 출구)",
+      "전동성당"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "jeonju-ajung-lake-run",
+    "name": "아중호수 둘레길 코스",
+    "region": "전주",
+    "category": "중거리",
+    "totalMeters": 6688,
+    "placeNames": [
+      "전주경기전 정문",
+      "경유지1",
+      "경유지2",
+      "경유지3",
+      "경유지4",
+      "도착지"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "jeonju-zoo-run",
+    "name": "전주동물원 코스",
+    "region": "전주",
+    "category": "단거리",
+    "totalMeters": 3548,
+    "placeNames": [
+      "덕진공원 3층 석탑",
+      "경유지1",
+      "경유지2",
+      "경유지3",
+      "경유지4",
+      "전주동물원"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "jeonju-catholic-shrine-run",
+    "name": "천주교 성지 코스",
+    "region": "전주",
+    "category": "단거리",
+    "totalMeters": 5696,
+    "placeNames": [
+      "전주 고속버스 터미널",
+      "치명자산성지 평화의전당"
     ],
     "thumbnail": null
   }

@@ -24,8 +24,8 @@ import { fileURLToPath } from 'node:url';
 import {
   courses,
   type CourseInput,
-  type CoursePoint,
   type DistanceCategory,
+  type Region,
 } from './courses.input.ts';
 
 // ── 설정 ────────────────────────────────────────────────────────────
@@ -54,6 +54,7 @@ interface WaypointAnchor {
 interface CourseOutput {
   id: string;
   name: string;
+  region: Region;
   declaredCategory: DistanceCategory;
   measuredCategory: DistanceCategory; // 실측 재분류 결과
   polyline: Coord[]; // 순서 보존, 구간 경계 중복점 제거
@@ -65,6 +66,7 @@ interface CourseOutput {
 interface CourseMeta {
   id: string;
   name: string;
+  region: Region;
   category: DistanceCategory; // 실측 기준
   totalMeters: number;
   placeNames: string[];
@@ -245,6 +247,7 @@ async function buildCourse(
   const heavy: CourseOutput = {
     id: course.id,
     name: course.name,
+    region: course.region,
     declaredCategory: course.declaredCategory,
     measuredCategory,
     polyline,
@@ -256,6 +259,7 @@ async function buildCourse(
   const meta: CourseMeta = {
     id: course.id,
     name: course.name,
+    region: course.region,
     category: measuredCategory,
     totalMeters,
     placeNames: points.map((p) => p.name),
