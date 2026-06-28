@@ -3,13 +3,77 @@
     "id": "gunsan-modern-history-run",
     "name": "근대 역사 박물관 런",
     "category": "중거리",
-    "totalMeters": 8669,
+    "totalMeters": 10604,
     "placeNames": [
       "은파호수공원",
       "은파호수 둘레길1",
       "은파호수 둘레길2",
       "은파호수 둘레길3",
+      "은파호수 둘레길4",
+      "은파호수 둘레길5",
       "군산 근대 역사 박물관"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "gunsan-saemangeum-run",
+    "name": "새만금 방파제 런",
+    "category": "장거리",
+    "totalMeters": 24157,
+    "placeNames": [
+      "새만금 비응공원",
+      "장자도 방파제"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "gunsan-jjamppong-run",
+    "name": "짬뽕런",
+    "category": "단거리",
+    "totalMeters": 5894,
+    "placeNames": [
+      "군산수송공원",
+      "경유지1",
+      "경유지2",
+      "경암동철길마을",
+      "조선은행",
+      "짬뽕특화거리"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "gunsan-seonyudo-beach-run",
+    "name": "선유도 해변 런",
+    "category": "단거리",
+    "totalMeters": 5181,
+    "placeNames": [
+      "옥돌해변",
+      "경유지1",
+      "경유지2",
+      "선유도 방파제",
+      "몽돌해변"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "gunsan-wetland-eco-run",
+    "name": "습지 생태 공원 런",
+    "category": "중거리",
+    "totalMeters": 7363,
+    "placeNames": [
+      "군산시청",
+      "군산 습지 생태 공원"
+    ],
+    "thumbnail": null
+  },
+  {
+    "id": "gunsan-cypress-forest-run",
+    "name": "편백나무 숲 런",
+    "category": "중거리",
+    "totalMeters": 8488,
+    "placeNames": [
+      "군산시청",
+      "편백치유의 숲"
     ],
     "thumbnail": null
   }
